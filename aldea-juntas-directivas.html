@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALDEA+ — Mini Juntas Directivas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0a0a0a; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; color: white; }
+  .font-mono, code, kbd { font-family: 'JetBrains Mono', monospace; }
+  .serif { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #242424; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #353535; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @keyframes fadeIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
+  .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+  body { background: #0a0a0a; }
+  textarea, input { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+// Lucide icons - we'll create simple inline SVG components for what we need
+const Icon = ({ children, size = 16, className = '' }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+const Calendar = (p) => <Icon {...p}><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></Icon>;
+const Users = (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></Icon>;
+const Clock = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>;
+const ChevronRight = (p) => <Icon {...p}><path d="m9 18 6-6-6-6"/></Icon>;
+const ChevronLeft = (p) => <Icon {...p}><path d="m15 18-6-6 6-6"/></Icon>;
+const ChevronDown = (p) => <Icon {...p}><path d="m6 9 6 6 6-6"/></Icon>;
+const Search = (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></Icon>;
+const Plus = (p) => <Icon {...p}><path d="M5 12h14M12 5v14"/></Icon>;
+const Check = (p) => <Icon {...p}><path d="M20 6 9 17l-5-5"/></Icon>;
+const X = (p) => <Icon {...p}><path d="M18 6 6 18M6 6l12 12"/></Icon>;
+const ExternalLink = (p) => <Icon {...p}><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></Icon>;
+const Mail = (p) => <Icon {...p}><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></Icon>;
+const Phone = (p) => <Icon {...p}><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></Icon>;
+const Copy = (p) => <Icon {...p}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></Icon>;
+const Send = (p) => <Icon {...p}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></Icon>;
+const AlertCircle = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></Icon>;
+const Sparkles = (p) => <Icon {...p}><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></Icon>;
+const Filter = (p) => <Icon {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>;
+const ArrowRight = (p) => <Icon {...p}><path d="M5 12h14M12 5l7 7-7 7"/></Icon>;
+const MapPin = (p) => <Icon {...p}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></Icon>;
+const Video = (p) => <Icon {...p}><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></Icon>;
+const Building2 = (p) => <Icon {...p}><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></Icon>;
+const UserCheck = (p) => <Icon {...p}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></Icon>;
+const Bell = (p) => <Icon {...p}><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></Icon>;
+const Settings = (p) => <Icon {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>;
+const Home = (p) => <Icon {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+const Edit2 = (p) => <Icon {...p}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></Icon>;
+const Trash2 = (p) => <Icon {...p}><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>;
+const MoreHorizontal = (p) => <Icon {...p}><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></Icon>;
+
+
+
+// === DATA EMBEDDED ===
+const RAW_DATA = {"startups": [{"cohorte": "C1", "name": "AF - Fuerza de Automatización", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cristhian David Carvajal Muñoz"}, {"servicio": "Consultoría 1", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Juan Camilo Bolivar Sánchez"}, {"servicio": "Consultoría 2", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Consultoría 3", "tema": "Propiedad intelectual", "experto": "Juan Pablo Llano Ceballos"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Mateo Carmona", "correo": "m@afglobal.co", "celular": "3004959220"}, {"cohorte": "C1", "name": "AoxLab S.A.S.", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cesar Alejandro Arango Palacio"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Jaime Alejandro Gómez Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia de aceleración para la expansión", "experto": "Jorge Eduardo Léon Gómez"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Yasmin E Lopera Pérez", "correo": "gerencia@aoxlab.com", "celular": "3112169900"}, {"cohorte": "C1", "name": "ConeXalab S.A.S BIC", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Lorena Patricia Palma Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Juan Camilo Bolivar Sánchez"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Ivan Guillermo Ramirez Zambrano", "correo": "iramirez@conexalab.com", "celular": "3134724592"}, {"cohorte": "C1", "name": "ControlT S.A.S", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Felipe Zárate Gutierrez"}, {"servicio": "Consultoría 1", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Juan Luis Jaramillo Jaramillo"}, {"servicio": "Consultoría 2", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Veronica Villa Lara", "correo": "veronica.villa@controlt.io", "celular": "3116125094"}, {"cohorte": "C1", "name": "Enrutapps S.A.S", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cesar Alejandro Arango Palacio"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Jaime Alejandro Gómez Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia de apalancamiento financiero", "experto": "Jorge Eduardo Léon Gómez"}, {"servicio": "Consultoría 3", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Fernando Cárdenas Echeverri"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Jorge Eduardo Léon Gómez"}], "emprendedor": "Elton Jhon Gomez", "correo": "elton@fontumi.co", "celular": "3015865040"}, {"cohorte": "C1", "name": "Fraktal Software Technologies", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Diana Carolina Gómez Aristizabal"}, {"servicio": "Consultoría 2", "tema": "Propiedad intelectual", "experto": "Carolina María Montoya Restrepo "}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Nelson David Osorio Arboleda"}], "emprendedor": "Pedro Londoño", "correo": "p.londono@fraktalsoftware.com", "celular": "3123280750"}, {"cohorte": "C1", "name": "INNHEALTH S.A.S BIC", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Byron Alberto Vélez Granda"}, {"servicio": "Consultoría 2", "tema": "Portafolio de productos y servicios escalables", "experto": "Juan Pablo García Cifuentes"}, {"servicio": "Consultoría 3", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Nelson David Osorio Arboleda"}], "emprendedor": "Adriana Fernanda Lopez Vasco", "correo": "info@innhealth.co", "celular": "3113751866"}, {"cohorte": "C1", "name": "Innmetec S.A.S", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Byron Alberto Vélez Granda"}, {"servicio": "Consultoría 2", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Tatiana Ocampo López"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Nelson David Osorio Arboleda"}], "emprendedor": "Catalina Isaza Falla", "correo": "gerenciatecnica@innmetec.com", "celular": "3182656050"}, {"cohorte": "C1", "name": "Keelcur Tecnología Ambiental", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cristhian David Carvajal Muñoz"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Felipe Zárate Gutierrez"}, {"servicio": "Consultoría 2", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Fernando Cárdenas Echeverri"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Erika Paola Melo", "correo": "erika.melo@keelcur.com", "celular": "3004863568"}, {"cohorte": "C1", "name": "Meeteam S.A.S.", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Tatiana Ocampo López"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Byron Alberto Vélez Granda"}, {"servicio": "Consultoría 2", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Fernando Cárdenas Echeverri"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Fernando Cárdenas Echeverri"}], "emprendedor": "Johana Balaguera", "correo": "johana.balaguera@meeteam.co", "celular": "3243444152"}, {"cohorte": "C1", "name": "MV Perception", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Byron Alberto Vélez Granda"}, {"servicio": "Consultoría 2", "tema": "Portafolio de productos y servicios escalables", "experto": "Juan Pablo García Cifuentes"}, {"servicio": "Consultoría 3", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Nelson David Osorio Arboleda"}], "emprendedor": "Yesennia Méndez", "correo": "ymendez@mvperception.com", "celular": "3168254885"}, {"cohorte": "C1", "name": "OMNIVIDA S.A.S.", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Lorena Patricia Palma Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia de apalancamiento financiero", "experto": "Jorge Eduardo Léon Gómez"}, {"servicio": "Consultoría 3", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Fernando Cárdenas Echeverri"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Lorena Patricia Palma Osorio"}], "emprendedor": "Carlos Alberto Gómez Mercado", "correo": "klargomez@gmail.com", "celular": "3104276152"}, {"cohorte": "C1", "name": "Qinaya S.A-S", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Lorena Patricia Palma Osorio"}, {"servicio": "Consultoría 2", "tema": "Portafolio de productos y servicios escalables", "experto": "Juan Pablo García Cifuentes"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "Catalina Ortiz", "correo": "Catalina@qinaya.co", "celular": "3158339516"}, {"cohorte": "C1", "name": "Teral S.A.S", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Diana Carolina Gómez Aristizabal"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Lorena Patricia Palma Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Juan Camilo Bolivar Sánchez"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Andrea del Pilar Castaño Pedroza"}], "emprendedor": "David Calderón Duarte", "correo": "david@teral.com.co", "celular": "3166937288"}, {"cohorte": "C1", "name": "TUCASH", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Lorena Patricia Palma Osorio"}, {"servicio": "Consultoría 2", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Andrea del Pilar Castaño Pedroza"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Elmer Winfrido Hoyos Muriel"}], "emprendedor": "Olivia González", "correo": "olivia@tucash.co", "celular": "3188200765"}, {"cohorte": "C1", "name": "Virtual Impact S.A.S (SkillsUp)", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Luis Fernando Jaramillo Toro"}, {"servicio": "Consultoría 1", "tema": "Estrategia de apalancamiento financiero", "experto": "Jean Paul Waserman Álvarez"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Quevin Estiven Zapata Taborda"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Catalina Higuita Osorio"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Jean Paul Waserman Álvarez"}], "emprendedor": "", "correo": "", "celular": ""}, {"cohorte": "C2", "name": "A&T Bionano SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Rafael Yepes Isaza"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Andrés Felipe Salazar Quintero"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Alejandro Gómez Alvarado"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Natalia Naranjo Ortiz"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Rafael Yepes Isaza"}], "emprendedor": "Tatiana Pineda Vasquez", "correo": "aytbionano@gmail.com", "celular": "3147930760"}, {"cohorte": "C2", "name": "AtlanttiCO", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Carlos Alejandro Zuluaga Arias"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Diana Carolina Gómez Aristizabal"}, {"servicio": "Consultoría 2", "tema": "Portafolio de productos y servicios escalables", "experto": "Byron Alberto Vélez Granda"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Carlos Alejandro Zuluaga Arias"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Byron Alberto Vélez Granda"}], "emprendedor": "Angela Usseglio", "correo": "ausseglio@hypercubus.co", "celular": "3208389310"}, {"cohorte": "C2", "name": "TuulApp", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Juan Manuel Giraldo Arroyave"}, {"servicio": "Consultoría 1", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Alejandro Gómez Alvarado"}, {"servicio": "Consultoría 2", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Jean Paul Waserman Álvarez"}, {"servicio": "Consultoría 3", "tema": "Propiedad intelectual", "experto": "Juan Pablo Llano Ceballos"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Jean Paul Waserman Álvarez"}], "emprendedor": "Juan Camilo Chavarro", "correo": "gerencia@tuulapp.com", "celular": "3152130357"}, {"cohorte": "C2", "name": "Tause SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cesar Alejandro Arango Palacio"}, {"servicio": "Consultoría 1", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Juan Pedro Tascón Palacio"}, {"servicio": "Consultoría 2", "tema": "Growth, métricas y ventas exponenciales", "experto": "Natalia Naranjo Ortiz"}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Nelson David Osorio Arboleda"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Nelson David Osorio Arboleda"}], "emprendedor": "Andres Felipe Soto Posada", "correo": "felipe@tause.co", "celular": "3007801382"}, {"cohorte": "C2", "name": "NATECO SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Diana Carolina Gómez Aristizabal"}, {"servicio": "Consultoría 1", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Quevin Estiven Zapata Taborda"}, {"servicio": "Consultoría 3", "tema": "Tecnología aplicada al negocio", "experto": "Andrés Felipe Salazar Quintero"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Diana Carolina Gómez Aristizabal"}], "emprendedor": "Jennifer Romo", "correo": "jennifer-romo1@hotmail.com", "celular": "3178352615"}, {"cohorte": "C2", "name": "fixlat sas", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Alejandro Gómez Alvarado"}, {"servicio": "Consultoría 1", "tema": "Growth, métricas y ventas exponenciales", "experto": "Carlos Alejandro Zuluaga Arias"}, {"servicio": "Consultoría 2", "tema": "Alianzas corporativas para el crecimiento", "experto": "Felipe Zárate Gutierrez"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Felipe Zárate Gutierrez"}], "emprendedor": "Amadeo Medina Pineda", "correo": "ceo@fixlat.com", "celular": "3104154049"}, {"cohorte": "C2", "name": "Onyx Soft SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Rafael Yepes Isaza"}, {"servicio": "Consultoría 1", "tema": "Growth, métricas y ventas exponenciales", "experto": "Carlos Alejandro Zuluaga Arias"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Rafael Yepes Isaza"}], "emprendedor": "Oscar Guevara", "correo": "ozguevara@onyxerp.com", "celular": "3122336700"}, {"cohorte": "C2", "name": "GEOTRENDS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Juan Manuel Giraldo Arroyave"}, {"servicio": "Consultoría 1", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Juan Luis Jaramillo Jaramillo"}, {"servicio": "Consultoría 2", "tema": "Growth, métricas y ventas exponenciales", "experto": "Carlos Alejandro Zuluaga Arias"}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Maria Antonieta Restrepo Hurtado "}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Carlos Alejandro Zuluaga Arias"}], "emprendedor": "Diego Mauricio Murillo Gómez", "correo": "proyectos@geotrends.co", "celular": "3160537404"}, {"cohorte": "C2", "name": "Biofile S.A.S. BIC", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Rafael Yepes Isaza"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Diana Carolina Gómez Aristizabal"}, {"servicio": "Consultoría 2", "tema": "Análisis competitivo y selección estratégica de mercados", "experto": "Jean Paul Waserman Álvarez"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Natalia Naranjo Ortiz"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Diana Carolina Gómez Aristizabal"}], "emprendedor": "Dorian Ferney Rallón Galvis", "correo": "dorian@biofile.com.co", "celular": "3160000000"}, {"cohorte": "C2", "name": "Adsoft", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Edwin Bernal Holguin"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión", "experto": "Alejandro Gómez Alvarado"}, {"servicio": "Consultoría 3", "tema": "Growth, métricas y ventas exponenciales", "experto": "Natalia Naranjo Ortiz"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Alejandro Gómez Alvarado"}], "emprendedor": "Jonathan Chamizo", "correo": "jonathanchamizo@adsoft.company", "celular": "3043764558"}, {"cohorte": "C2", "name": "Consultoría GP SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Luis Fernando Jaramillo Toro"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 2", "tema": "Growth, métricas y ventas exponenciales.", "experto": "Catalina Higuita Osorio"}, {"servicio": "Consultoría 3", "tema": "Alianzas corporativas para el crecimiento", "experto": "Felipe Zárate Gutierrez"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Felipe Zárate Gutierrez"}], "emprendedor": "Pablo Emilio Jaramillo Henao", "correo": "pablo@innovati.com.co", "celular": "3155121787"}, {"cohorte": "C2", "name": "mitecni.co S.A.S.", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Edwin Bernal Holguin"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Adriana Matallana Molina"}, {"servicio": "Consultoría 2", "tema": "Estrategia jurídica para blindar y apalancar la expansión.", "experto": "Quevin Estiven Zapata Taborda"}, {"servicio": "Consultoría 3", "tema": "Growth, Métricas y Ventas Exponenciales", "experto": "Catalina Higuita Osorio "}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Catalina Higuita Osorio"}], "emprendedor": "Sergio Andres Torres Cuevas", "correo": "sergio.torres@mitecni.co", "celular": "3158788780"}, {"cohorte": "C2", "name": "UCREDIT SKILLS SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Juan Manuel Giraldo Arroyave "}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Felipe Zárate Gutierrez"}, {"servicio": "Consultoría 2", "tema": "Portafolio de productos y servicios escalables", "experto": "Juan Esteban Álvarez Hernández"}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Felipe Zárate Gutierrez "}], "emprendedor": "Juan Pablo Londoño Tavera", "correo": "ceo@ucreditskills.com", "celular": "3014575871"}, {"cohorte": "C2", "name": "Medical Shapes SAS", "services": [{"servicio": "Mentoría", "tema": "Acompañamiento de mentor", "experto": "Cristhian David Carvajal Muñoz"}, {"servicio": "Consultoría 1", "tema": "Estrategia de aceleración para la expansión", "experto": "Andrés Felipe Salazar Quintero"}, {"servicio": "Consultoría 2", "tema": "Estrategia de apalancamiento financiero", "experto": "Elmer Winfrido Hoyos Muriel"}, {"servicio": "Consultoría 3", "tema": "Propiedad intelectual", "experto": "Carolina María Montoya Restrepo "}, {"servicio": "Plan de Expansión", "tema": "Diseño del plan de expansión", "experto": "Cristhian David Carvajal Muñoz"}], "emprendedor": "David Alberto Calle Vasquez", "correo": "d.calle@medicalshapes.com", "celular": "3116355733"}], "experts": {"adriana matallana molina": {"name": "Adriana Matallana Molina", "email": "human.connect.co@gmail.com", "phone": "3158316654", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Sem 27-30 abril 11am-2pm, despues de las 3pm"}, "alejandro gomez alvarado": {"name": "Alejandro Gomez Alvarado", "email": "alejandro@loylegalstudio.com", "phone": "3158871616", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun27 8am-11am, Lun27 12pm-2pm, Lun27 3pm-6pm, Mie29 8am-10am, Mie29 12pm-6pm, Jue30 8am-10am, Jue30 11am-2pm, Jue30 3pm-6pm, Lun4 8am-11am, Lun4 12pm-6pm, Mar5 8am-2pm, Mar5 3:30pm-6pm, Mie6 10am-6pm, Jue7 8am-6pm, Vie8 9am-6pm. NO Mar28 (retiro todo el dia)"}, "andrea del pilar castano pedroza": {"name": "Andrea del Pilar Castano Pedroza", "email": "pilar.castano.pedroza@gmail.com", "phone": "3103404762", "role": "Consultor", "estado": "Respondio", "disponibilidad": "NO: 22/04, 23/04, 05/05, 06/05, 19/05. Prefiere 8am-12pm. Resto si se puede agendar"}, "andres henao zapata": {"name": "Andres Henao Zapata", "email": "ahenao@fbanalytics.com.co", "phone": "573193404312", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Mar-Vie 8-9am"}, "andres felipe molina gonzalez": {"name": "Andres Felipe Molina Gonzalez", "email": "amolina9@gmail.com", "phone": "3128423934", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "andres felipe salazar quintero": {"name": "Andres Felipe Salazar Quintero", "email": "asalazar@inecore.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "9:30am-2:30pm"}, "anibal eduardo moreno mejia": {"name": "Anibal Eduardo Moreno Mejia", "email": "emoreno@integralgroupsas.com", "phone": "3113581669", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "byron alberto velez granda": {"name": "Byron Alberto Velez Granda", "email": "byronvelez@gmail.com", "phone": "3136704622", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun27 3-6pm, Mar28 9-11am/1-4pm, Jue30 7am-6pm, Lun4 7am-6pm, Mar5 9am-6pm, Mie6 7am-6pm, Vie8 9am-1pm"}, "carlos alejandro zuluaga arias": {"name": "Carlos Alejandro Zuluaga Arias", "email": "azuluagaarias68@gmail.com", "phone": "", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Mar28 7am-7pm, Mie29 7am-7pm"}, "carolina maria montoya restrepo": {"name": "Carolina Maria Montoya Restrepo", "email": "cmmontoyr@gmail.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Mie29 todo el dia, Mie6 2pm+, Jue7 2pm+"}, "catalina higuita osorio": {"name": "Catalina Higuita Osorio", "email": "caticahiguita@gmail.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Vie 9/10am/2-4pm, Lun 10-12/3-4pm, Mar 11am-1pm, Mie 10-11am/2-3pm; Jue NO"}, "cesar alejandro arango palacio": {"name": "Cesar Alejandro Arango Palacio", "email": "cesararango@gmail.com", "phone": "573147402630", "role": "Mentor", "estado": "Respondio", "disponibilidad": "29abr 2-4pm, 30abr 2-3/4:30-5:30pm, May 4/6/8 varias horas"}, "cristhian david carvajal munoz": {"name": "Cristhian David Carvajal Munoz", "email": "cristhiandavid@hotmail.com", "phone": "", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Mar29 abr 5-6pm; May 5/7/8 1-2pm o 5-6pm"}, "diana carolina gomez aristizabal": {"name": "Diana Carolina Gomez Aristizabal", "email": "carolinagomez777@hotmail.com", "phone": "", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Cualquier dia 11am o 1pm"}, "edwin bernal holguin": {"name": "Edwin Bernal Holguin", "email": "edwin.bernal@gmail.com", "phone": "573168399737", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "elmer winfrido hoyos muriel": {"name": "Elmer Winfrido Hoyos Muriel", "email": "elmerpicas@gmail.com", "phone": "3137657984", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "felipe zarate gutierrez": {"name": "Felipe Zarate Gutierrez", "email": "felipe@flink.co", "phone": "3166675698", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "fernando cardenas echeverri": {"name": "Fernando Cardenas Echeverri", "email": "fcardenas@lift-gi.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Mie29 tarde, Jue30 tarde"}, "hernan herrera echeverri": {"name": "Hernan Herrera Echeverri", "email": "hherrer2@eafit.edu.co", "phone": "", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "jaime alejandro gomez osorio": {"name": "Jaime Alejandro Gomez Osorio", "email": "jagomez@estra.com.co", "phone": "", "role": "Mentor", "estado": "Respondio", "disponibilidad": "A partir de 3:30pm cualquier dia. Respuesta: Lun 27/04/2026."}, "jean paul waserman alvarez": {"name": "Jean Paul Waserman Alvarez", "email": "cbajpw@gmail.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Cualquier dia 10:30-11:30am o 3:30-4:30pm"}, "jhon dario longas alzate": {"name": "Jhon Dario Longas Alzate", "email": "jlongasa@eafit.edu.co", "phone": "3043772743", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "jorge eduardo leon gomez": {"name": "Jorge Eduardo Leon Gomez", "email": "jorgito870@hotmail.com", "phone": "573004296010", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Mar28 2-4pm, Mie29 1:30-3pm, Jue30 8-10am, May 4-6pm"}, "juan camilo bolivar sanchez": {"name": "Juan Camilo Bolivar Sanchez", "email": "expogerenciargpg@gmail.com", "phone": "3158824520", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "juan camilo jaramillo jaramillo": {"name": "Juan Camilo Jaramillo Jaramillo", "email": "jcjaramillo@conexion-estrategica.com", "phone": "", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "juan david restrepo restrepo": {"name": "Juan David Restrepo Restrepo", "email": "juan.restrepo@laferiadediseno.com", "phone": "3154346486", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "juan david valencia arango": {"name": "Juan David Valencia Arango", "email": "juanvalencia@outlook.com", "phone": "3004211350", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "juan esteban alvarez hernandez": {"name": "Juan Esteban Alvarez Hernandez", "email": "jalvare1@eafit.edu.co", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Antes 8am o 11am-2pm"}, "juan luis jaramillo jaramillo": {"name": "Juan Luis Jaramillo Jaramillo", "email": "jjaramillo@entrada-global.com", "phone": "", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "juan manuel giraldo arroyave": {"name": "Juan Manuel Giraldo Arroyave", "email": "kapitanproyectos@gmail.com", "phone": "3053359698", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Lun 4 mayo 9:00am-11:30am; Mie 6 mayo 4:30pm-5:30pm; Vie 8 mayo 4:30pm-5:30pm. Respuesta: Lun 27/04/2026."}, "juan pablo garcia cifuentes": {"name": "Juan Pablo Garcia Cifuentes", "email": "juanpablogarciacifuentes@gmail.com", "phone": "3014210167", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun 4 mayo 11:30am-3pm; Mar 5 mayo 8:30am-1pm; Mie 6 mayo 8:30am-11am; Jue 7 mayo 2pm-4pm; Vie 8 mayo 8:30am-10:30am. Respuesta: Dom 26/04/2026."}, "juan pablo llano ceballos": {"name": "Juan Pablo Llano Ceballos", "email": "jpllanoc@gmail.com", "phone": "3013896926", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun28 4-6pm, Mie29 9-10am/5-6pm, Jue30 9-11am; May 4-6pm"}, "juan pedro tascon palacio": {"name": "Juan Pedro Tascon Palacio", "email": "jptascon@corona.com.co", "phone": "3104260886", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Mie29 8-10am/2-4pm, Jue30 8-10am, Mie6 1-6pm, Jue7 8-10am"}, "juan ricardo gaviria echeverri": {"name": "Juan Ricardo Gaviria Echeverri", "email": "juanricardogaviria@gmail.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun 10-1pm, Mar/Jue 3-6pm"}, "lorena patricia palma osorio": {"name": "Lorena Patricia Palma Osorio", "email": "lorenapalma85@gmail.com", "phone": "525573862100", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Jue30 11:30am-1:30pm, Jue30 6pm-7:30pm. NO Jue 4pm (cita medica)"}, "luis felipe sanchez gomez": {"name": "Luis Felipe Sanchez Gomez", "email": "lfsanchez@welog.com.co", "phone": "3207238287", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "luis fernando jaramillo toro": {"name": "Luis Fernando Jaramillo Toro", "email": "jaramillofernando@hotmail.com", "phone": "", "role": "Mentor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "luisa fernanda correa lafaurie": {"name": "Luisa Fernanda Correa Lafaurie", "email": "lfcorrea@ceccinvestment.com", "phone": "17542992332", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Lun 4 y 11 a las 3pm, Mar 5 y 12 a las 2pm, Jue 7 a las 4pm, Vie 8 y 15 a las 10:30am"}, "maria antonieta restrepo hurtado": {"name": "Maria Antonieta Restrepo Hurtado", "email": "restrepohurtado@gmail.com", "phone": "573158292947", "role": "Consultor", "estado": "Respondio", "disponibilidad": "Jue7 mayo tarde, o otro jueves tarde"}, "natalia naranjo ortiz": {"name": "Natalia Naranjo Ortiz", "email": "nnaranjo123@gmail.com", "phone": "(317) 636 - 6888", "role": "Consultor", "estado": "Respondio", "disponibilidad": "28 abril tarde, resto cualquier hora (max 5pm)"}, "nelson david osorio arboleda": {"name": "Nelson David Osorio Arboleda", "email": "david@flink.co", "phone": "", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Jue30 2-3/4-5pm, Lun4 11-12/2-3pm, Mar5 3-5pm, Mie6 3-5pm, Vie8 2-4pm"}, "pia podesta correa": {"name": "Pia Podesta Correa", "email": "pia.podesta@gmail.com", "phone": "573184246521", "role": "Consultor", "estado": "Pendiente", "disponibilidad": "Sin respuesta"}, "quevin estiven zapata taborda": {"name": "Quevin Estiven Zapata Taborda", "email": "quevinzapata94@gmail.com", "phone": "", "role": "Consultor", "estado": "Respondio", "disponibilidad": "28abr 9-11am, 30abr 2pm+, 4may manana, 7may manana"}, "rafael yepes isaza": {"name": "Rafael Yepes Isaza", "email": "rafaelyepes1968@hotmail.com", "phone": "3104263683", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Lun27-Jue30 4-6pm, Lun4 manana, Jue7/Vie8 4-6pm; NO Mar5/Mie6/Lun11"}, "tatiana ocampo lopez": {"name": "Tatiana Ocampo Lopez", "email": "tatianaocampol@outlook.com", "phone": "3144130276", "role": "Mentor", "estado": "Respondio", "disponibilidad": "Mie29 12pm-1pm, Mie29 5pm-6pm, Jue30 7am-8am, Jue30 8am-9am, Jue30 12pm-1pm, Jue30 4:30pm-5:30pm, Jue30 5:30pm-6:30pm, Mie6 7am-8am, Mie6 12pm-1pm, Mie6 4:30pm-5:30pm, Mie6 5:30pm-6:30pm"}, "angela maria zapata v.": {"name": "Angela María Zapata V.", "email": "az@improntaorganizacional.com", "phone": "3164824250", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carlos enrique velez": {"name": "Carlos Enrique Vélez", "email": "carlos.velez.restrepo@epm.com.co", "phone": "3108236128", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "cesar giraldo lopera": {"name": "César Giraldo Lopera", "email": "cesargiraldol@gmail.com", "phone": "3108959042", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jorge eduardo lopez jaramillo": {"name": "Jorge Eduardo López Jaramillo", "email": "jlopez@edekan.biz", "phone": "3117705802", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jorge suarez": {"name": "Jorge Suarez", "email": "nachosuarezco@gmail.com", "phone": "3206326519", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis eduardo martinez": {"name": "Luis Eduardo Martinez", "email": "lmartin6@eafit.edu.co", "phone": "3167592148", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jose david ospina": {"name": "JOSE DAVID OSPINA", "email": "jodavidor@gmail.com", "phone": "3147725255", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jose rodriguez": {"name": "Jose Rodriguez", "email": "jose@transformente.com", "phone": "3248942605", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jaime villa": {"name": "Jaime Villa", "email": "jaime.villa@basica.com.co", "phone": "3206963296", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan luis jaramillo": {"name": "Juan Luis Jaramillo", "email": "juanchoj2@hotmial.com", "phone": "3148575665", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "lorena palma osorio": {"name": "Lorena Palma Osorio", "email": "lorepalma881@gmail.com", "phone": "525573862100", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "roxana hajjat florez": {"name": "ROXANA HAJJAT FLOREZ", "email": "roxyhajjat@hotmail.com", "phone": "3136540938", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "diego fernando sanchez trujillo": {"name": "Diego Fernando Sánchez Trujillo", "email": "diegof92@hotmail.com", "phone": "314771028", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan david arango brunet": {"name": "Juan David Arango Brunet", "email": "juandarango70@gmail.com", "phone": "3107162855", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis martinez": {"name": "Luis martinez", "email": "lmartin6@eafir.edu.co", "phone": "3167592148", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan jose sanchez salas": {"name": "Juan Jose Sánchez Salas", "email": "jjsasa@gmail.com", "phone": "3016479257", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis osorio": {"name": "Luis Osorio", "email": "luis@circulatam.com", "phone": "3054287576", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "camilo gaviria gaviria": {"name": "Camilo Gaviria Gaviria", "email": "camilo.gaviria182@gmail.com", "phone": "3207854319", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juliana ordonez": {"name": "Juliana Ordóñez", "email": "juliordonez@gmail.com", "phone": "3104532388", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan pablo calderon bocanegra": {"name": "Juan Pablo Calderon Bocanegra", "email": "jcalderon@due-legal.com", "phone": "3008955478", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "natalia lucia chavarro bocanegra": {"name": "Natalia Lucía Chavarro Bocanegra", "email": "nchavarro@due-legal.com", "phone": "3166258313", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan david londono cadavid": {"name": "Juan David Londoño Cadavid", "email": "consultoriaygestion@gmail.com", "phone": "3007979709", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan mauricio velez castaneda": {"name": "Juan Mauricio Velez Castañeda", "email": "mauro.velez@catalizahub.com", "phone": "3193172566", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "humberto cadavid alvarez": {"name": "Humberto Cadavid Álvarez", "email": "h@corvusclan.com.co", "phone": "3115069807", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan camilo jaramillo": {"name": "Juan Camilo Jaramillo", "email": "jcjaramillo@conexion-estrategica.com", "phone": "3146102525", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "david osorio": {"name": "David Osorio", "email": "david@flink.co", "phone": "573146806633", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "nathalia miranda o": {"name": "Nathalia Miranda O", "email": "nathalia@transformente.com", "phone": "573007855675", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "catalina ganzalez barbosa": {"name": "Catalina Ganzalez Barbosa", "email": "catagonzo@hotmail.com", "phone": "573122471073", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres felipe restrepo mejia": {"name": "Andres Felipe Restrepo Mejia", "email": "felipe.restrepo@10xthinking.com.co", "phone": "3006553651", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "fernando cardenas": {"name": "Fernando Cardenas", "email": "fcardenas@lift-gi.com", "phone": "573016639210", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "ricardo gaviria": {"name": "Ricardo Gaviria", "email": "juanricardogaviria@gmail.com", "phone": "573103993861", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "ana paulina toro": {"name": "Ana Paulina Toro", "email": "anapaulinatoro@gmail.com", "phone": "573023591650", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres salazar quintero": {"name": "Andres Salazar Quintero", "email": "asalazar@inecore.com", "phone": "3106749258", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "marcela del socorro villa restrepo": {"name": "Marcela del Socorro Villa Restrepo", "email": "marcevilla1437@gmail.com", "phone": "3154004963", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan carlos hoyos castro": {"name": "Juan Carlos Hoyos Castro", "email": "contact@jarakiri.com", "phone": "573136263684", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "felipe castrillon ramirez": {"name": "Felipe Castrillon Ramirez", "email": "felipecastrillonramirez@gmail.com", "phone": "3017546868", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "ana maria munoz marin": {"name": "Ana María Muñoz Marín", "email": "anamunozm.consultoria@gmail.com", "phone": "304 640 5923", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "diana mercedes herrera montoya": {"name": "Diana Mercedes Herrera Montoya", "email": "dianaherrera@genteok.net", "phone": "573185865751", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carla podesta": {"name": "Carla Podestá", "email": "cpodestac@gmail.com", "phone": "3187643324", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "nicolas becerra cardona": {"name": "Nicolas Becerra Cardona", "email": "nbecerra@due-legal.com", "phone": "3143956054", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daniel moreno gallego": {"name": "Daniel Moreno Gallego", "email": "dmoreg4@gmail.com", "phone": "573103740756", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "patricia fuel": {"name": "PATRICIA FUEL", "email": "patriciafuel@gmail.com", "phone": "573104401160", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "edgar navarro": {"name": "Edgar Navarro", "email": "edgar@monzalab.com", "phone": "3208492641", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "hugo jaimezurek": {"name": "Hugo Jaimezurek", "email": "hjaimezurek@gmail.com", "phone": "3108323223", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "felipe restrepo ricon": {"name": "Felipe Restrepo Ricón", "email": "frestrepo@contextolegal.com", "phone": "3206766754", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "nicolas ordonez": {"name": "Nicolás Ordoñez", "email": "nicolasordonez@comfama.com.co", "phone": "573217607115", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "oscar emir rincon": {"name": "Oscar Emir Rincón", "email": "oscaremir.rincon@gmail.com", "phone": "3156719867", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "julissa rodriguez": {"name": "Julissa Rodríguez", "email": "julissarodriguez@comfama.com.co", "phone": "3104419655", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "sofia tejada nunez": {"name": "Sofía Tejada Núñez", "email": "sofiatejadan22@gmail.com", "phone": "573008686185", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan diego monsalve": {"name": "Juan Diego Monsalve", "email": "jdmonsalve64@gmail.com", "phone": "3117581692", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "maria isabel orjuela jimenez": {"name": "María Isabel Orjuela Jiménez", "email": "mariaisabelorjuelaj@gmail.com", "phone": "573156866616", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan camilo": {"name": "Juan camilo", "email": "jcmartinea@eafit.edu.co", "phone": "3014071159", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jorge enrique ardila acosta": {"name": "Jorge Enrique Ardila Acosta", "email": "ardilaconsultor@gmail.com", "phone": "3123808383", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "laura molina": {"name": "Laura Molina", "email": "molinaramirez.laura@gmail.com", "phone": "3117336808", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carolina gomez": {"name": "Carolina gomez", "email": "carolinagomez777@hotmail.com", "phone": "573014987275", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "miguel uribe alvarez": {"name": "Miguel Uribe Alvarez", "email": "migueluribea@gmail.com", "phone": "3117497382", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "german zuniga saavedra": {"name": "Germán Zúñiga Saavedra", "email": "germanzs@bentura.com.co", "phone": "573217521515", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "maria de los angeles jimenez": {"name": "María de los Ángeles Jiménez", "email": "madejimenezrojas@gmail.com", "phone": "3103435074", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "tatiana echeverri restrepo": {"name": "Tatiana Echeverri Restrepo", "email": "tatianaecheverrirpo@gmail.com", "phone": "573001026453", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "pamela martinez llano": {"name": "Pamela Martínez llano", "email": "pamelamartinezllano@gmail.com", "phone": "3187488464", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "greysy rodriguez": {"name": "Greysy Rodriguez", "email": "greysytrys@gmail.com", "phone": "573016225545", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "catalina higuita": {"name": "CATALINA HIGUITA", "email": "", "phone": "573113643573", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "oscar soto f.": {"name": "OSCAR SOTO F.", "email": "hola@oscarsotof.co", "phone": "573216172831", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carmen leon": {"name": "Carmen Leon", "email": "carmen_leon@yahoo.com", "phone": "51 980191764", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan camilo bolivar": {"name": "Juan Camilo Bolívar", "email": "cam.bolivar@gmail.com", "phone": "573158824520", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan esteban alvarez": {"name": "Juan Esteban Álvarez", "email": "juan@begrowlab.com", "phone": "3173688131", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "paula gaviria": {"name": "Paula Gaviria", "email": "pgaviriaa@gmail.com", "phone": "573163696478", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "maria mercedes vasquez ossa": {"name": "Maria Mercedes Vásquez Ossa", "email": "mariamvasquezo@gmail.com", "phone": "3015308310", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "mauricio uribe valencia": {"name": "Mauricio Uribe Valencia", "email": "muribe@fractalcgo.com", "phone": "3007312050", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "pedro carlos contreras sierra": {"name": "Pedro Carlos Contreras Sierra", "email": "pccontrers@eafit.edu.co", "phone": "3008176026", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "david navarro": {"name": "David Navarro", "email": "davonavarro@gmail.com", "phone": "316 877 2404", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "alvaro pinilla": {"name": "Álvaro Pinilla", "email": "manadadeleonesdecolores@gmail.com", "phone": "573112074555", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "clara ines": {"name": "Clara Inés", "email": "klarabarreto@gmail.com", "phone": "573206338087", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "paola andrea torres duque": {"name": "PAOLA ANDREA TORRES DUQUE", "email": "paola.torres@psy-tech.co", "phone": "3150477371", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis fernando": {"name": "LUIS FERNANDO", "email": "jaramillofernando@hotmail.com", "phone": "3185860584", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "maria antonia asuad": {"name": "María Antonia Asuad", "email": "antonia@percepta.com.co", "phone": "573006083061", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daiana chaverra agudelo": {"name": "Daiana Chaverra Agudelo", "email": "consultora@daianach.com", "phone": "3183635065", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan david piedrahita gil": {"name": "Juan David Piedrahíta Gil", "email": "juandavid@cafefolclor.com", "phone": "3003430361", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "oscar valbuena aguirre": {"name": "Oscar Valbuena Aguirre", "email": "info@osabuena.com", "phone": "573115311489", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "ramiro": {"name": "Ramiro", "email": "ramiro@rampapublicidad.com", "phone": "3102533731", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "edison fabian parra meneses": {"name": "Edison Fabian Parra Meneses", "email": "epmespam@gmail.com", "phone": "573043766206", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "felipe sosa rodriguez": {"name": "Felipe Sosa Rodriguez", "email": "felipe.sosa86@gmail.com", "phone": "573015653469", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis fernando rendon cortes": {"name": "LUIS FERNANDO RENDON CORTES", "email": "lfrendon854@gmail.com", "phone": "3104622509", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jackeline guerra gomez": {"name": "Jackeline Guerra Gómez", "email": "jackyguerrag@gmail.com", "phone": "3116023798", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan esteban alvarez hernanadez": {"name": "JUAN ESTEBAN ALVAREZ HERNANADEZ", "email": "jalvare1@eafit.edu.co", "phone": "3014693211", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "mateo restrepo": {"name": "Mateo Restrepo", "email": "mateorestrepo94@gmail.com", "phone": "3137976230", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan camilo martinez": {"name": "Juan camilo Martínez", "email": "mjcamilo802@gmail.com", "phone": "30140711459", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "justinne dayanna leon": {"name": "Justinne Dayanna Leon", "email": "justinne.leon5715@gmail.com", "phone": "19146599294", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "sofia tejada": {"name": "Sofía Tejada", "email": "stejadan@eafit.edu.co", "phone": "3008686185", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "sdd": {"name": "Sdd", "email": "sofiatejadan@gmail.com", "phone": "30008686175", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "melissa": {"name": "Melissa", "email": "mmontoyat4@eafit.edu.co", "phone": "3136450236", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "isabel carolina gomez villada": {"name": "Isabel Carolina Gómez Villada", "email": "consultoria@crecer.co", "phone": "3146820327", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "justinne leon": {"name": "Justinne Leon", "email": "Justinne.leon5715@gmail.com", "phone": "9146599294", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "mariana gomez": {"name": "Mariana Gómez", "email": "Mgomezgo@me.com", "phone": "3017081355", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "mauricio uribe": {"name": "Mauricio Uribe", "email": "mauriciouribe@outlook.com", "phone": "3007312050", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "cristian roberto gutierrez ricardo": {"name": "Cristian Roberto Gutierrez Ricardo", "email": "crgutier@bancolombia.com.co", "phone": "3184722920", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres david caicedo bernal": {"name": "Andrés David Caicedo Bernal", "email": "andres@optidi.com", "phone": "3243614000", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juraj chovan": {"name": "Juraj Chovan", "email": "jchovan@gmail.com", "phone": "3148880379", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "gustavo morales gil": {"name": "Gustavo Morales Gil", "email": "gustavomorales@gmail.com", "phone": "3113071774", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "sebastian ricaurte alvarez": {"name": "Sebastian Ricaurte Alvarez", "email": "sebas@soypanda.com", "phone": "3246784808", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan pablo rodriguez neira": {"name": "JUAN PABLO RODRIGUEZ NEIRA", "email": "juanpablorodriguez@dosbuhos.co", "phone": "3103340280", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carlos alberto restrepo carvajal": {"name": "Carlos Alberto Restrepo Carvajal", "email": "carlos.restrepo.carvajal@gmail.com", "phone": "3006166458", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jose fernando vasquez sanchez": {"name": "José Fernando Vásquez Sánchez", "email": "jfvs81@gmail.com", "phone": "3183451845", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres felipe urrego espinosa": {"name": "Andrés Felipe Urrego Espinosa", "email": "aurrego17@gmail.com", "phone": "3046246851", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "veronica gomez ospina": {"name": "Veronica Gómez Ospina", "email": "verogomez23@hotmail.com", "phone": "3122586121", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "camilo perez restrepo": {"name": "Camilo Perez Restrepo", "email": "cperezr1@eafit.edu.co", "phone": "3117477310", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres gomez": {"name": "Andrés Gómez", "email": "agomez@aciertocontable.com", "phone": "3128878643", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jorge vargas": {"name": "Jorge Vargas", "email": "jvargas@mono.la", "phone": "3145523345", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "pablo angel": {"name": "Pablo Angel", "email": "pangelrestrepo@gmail.com", "phone": "3053152900", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "monica matta": {"name": "Mónica Matta", "email": "mmattahe@gmail.com", "phone": "3006102849", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daniel velez": {"name": "Daniel velez", "email": "dvelezdiez@gmail.com", "phone": "3216405254", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "alexandra milena moncada hernandez": {"name": "Alexandra Milena Moncada Hernández", "email": "fenixomega9@hotmail.com", "phone": "3015811679", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "oscar ivan quintero osorio": {"name": "OSCAR IVAN QUINTERO OSORIO", "email": "o.i.q.osorio@gmail.com", "phone": "3006534912", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "alejandra mesa": {"name": "Alejandra Mesa", "email": "alejandramesa.arango@gmail.com", "phone": "3104295041", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "miguel tirado bustamante": {"name": "Miguel Tirado Bustamante", "email": "miguelftirado@gmail.com", "phone": "3108642650", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "julian andres cardona giraldo": {"name": "Julian Andres Cardona Giraldo", "email": "jacardon10@eafit.edu.co", "phone": "3017277175", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "lina giraldo agudelo": {"name": "Lina Giraldo Agudelo", "email": "lgiral46@eafit.edu.co", "phone": "3163041566", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andrea misas velez": {"name": "Andrea Misas Velez", "email": "amisasv@eafit.edu.co", "phone": "3004669675", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daniela velez montoya": {"name": "Daniela Vélez Montoya", "email": "dvelez1@eafit.edu.co", "phone": "3015140810", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "sebastian trujillo": {"name": "Sebastián Trujillo", "email": "sebastiantrujillo@hotmail.com", "phone": "3155918023", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan arcila correa": {"name": "Juan Arcila Correa", "email": "Juan.arcila.72@gmail.com", "phone": "3178949280", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jose luis ossa cardona": {"name": "José Luis Ossa Cardona", "email": "jlossac@eafit.edu.co", "phone": "3206257181", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carmen ofelia leon rosales": {"name": "Carmen Ofelia Leon Rosales", "email": "Carmen_leon@yahoo.com", "phone": "980191764", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "maria henao henao": {"name": "Maria Henao Henao", "email": "mehenao171987@gmail.com", "phone": "3145497504", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carlos alejandro zuluaga": {"name": "Carlos Alejandro Zuluaga", "email": "azuluagaarias68@gmail.com", "phone": "3213020798", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "andres vejarano calderon": {"name": "Andrés Vejarano Calderón", "email": "avc@vejaranoycalderon.com", "phone": "3123511613", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jean paul waserman": {"name": "Jean Paul Waserman", "email": "cbajpw@gmail.com", "phone": "3059151191", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "hernan herrera": {"name": "Hernan Herrera", "email": "hherrer2@eafit.edu.co", "phone": "3147127107", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "mateo buritica fernandez": {"name": "Mateo Buriticá Fernández", "email": "mateo@intrinseco.com.co", "phone": "3007947792", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daniel francisco montoya velez": {"name": "Daniel Francisco Montoya Velez", "email": "danielfmontoy@gmail.com", "phone": "3233441704", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "diego fernando hernandez vasco": {"name": "Diego Fernando Hernández Vasco", "email": "marketingverde@hotmail.com", "phone": "3006514882", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "esteban gomez gomez": {"name": "Esteban Gómez Gómez", "email": "gomez.g.esteban@gmail.com", "phone": "3113107364", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luz amalia valencia castro": {"name": "Luz Amalia Valencia Castro", "email": "lavalenciac36@gmail.com", "phone": "3216403029", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "jaime alejandro gomez": {"name": "Jaime Alejandro Gómez", "email": "jagomez@estra.com.co", "phone": "3137590812", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "quevin zapata taborda": {"name": "Quevin Zapata Taborda", "email": "quevinzapata94@gmail.com", "phone": "3218831184", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "miguel juliao": {"name": "Miguel Juliao", "email": "mjuliao@interglassusa.com", "phone": "3059035760", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "julian gomez": {"name": "Julián Gómez", "email": "julian.gomez@growfinance.co", "phone": "3007384060", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "juan esteban arias giraldo": {"name": "JUAN ESTEBAN ARIAS GIRALDO", "email": "simplexaunclick@gmail.com", "phone": "3202886542", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "carolina montoya montoya restrepo": {"name": "Carolina Montoya Montoya Restrepo", "email": "cmmontoyr@gmail.com", "phone": "3002040990", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "luis miguel bolivar caro": {"name": "Luis Miguel Bolivar Caro", "email": "lmbolivarc@eafit.edu.co", "phone": "3165786687", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "daniel restrepo fonseca": {"name": "Daniel Restrepo Fonseca", "email": "drestrepof@gmail.com", "phone": "3127950859", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "cristhian carvajal": {"name": "Cristhian Carvajal", "email": "cristhiandavid@hotmail.com", "phone": "941007825", "role": "", "estado": "Pendiente", "disponibilidad": ""}, "david orrego": {"name": "David Orrego", "email": "soydavidorrego@gmail.com", "phone": "8573069638", "role": "", "estado": "Pendiente", "disponibilidad": ""}}, "expert_proposals": {"lorena patricia palma osorio": {"ConeXalab S.A.S BIC": {"date": "2026-04-30", "time": "11:30am"}, "OMNIVIDA S.A.S.": {"date": "2026-04-30", "time": "12:00pm"}, "Teral S.A.S": {"date": "2026-04-30", "time": "12:30pm"}, "Qinaya S.A-S": {"date": "2026-04-30", "time": "6:00pm"}, "TUCASH": {"date": "2026-04-30", "time": "6:30pm"}}}};
+
+// === HELPERS ===
+const normalize = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+const expertKey = (name) => normalize(name);
+
+const initials = (name) => {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  return (parts[0]?.[0] || '') + (parts[parts.length > 1 ? 1 : 0]?.[0] || '');
+};
+
+const colorFromName = (name) => {
+  const colors = ['#f5c542', '#5b9fd6', '#a47ed1', '#4ecb71', '#e0943a', '#e05555', '#5fc7c0', '#d68bbf'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  return colors[Math.abs(h) % colors.length];
+};
+
+const STARTUP_ID = (s) => {
+  const cohorte = s.cohorte;
+  const list = RAW_DATA.startups.filter(x => x.cohorte === cohorte).sort((a,b) => a.name.localeCompare(b.name));
+  const idx = list.findIndex(x => x.name === s.name);
+  return `${cohorte}-${String(idx + 1).padStart(2, '0')}`;
+};
+
+// Time slot helpers
+const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+const FULL_DAYS_ES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+const formatDate = (d) => `${d.getDate()} ${MONTHS_ES[d.getMonth()]}`;
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+// === Parse free-form availability into structured slots ===
+// We generate a 4-week horizon from a base date (Mon Apr 27, 2026) and try to match natural language entries
+const BASE_DATE = new Date(2026, 3, 27); // Apr 27, 2026 - Monday
+
+const parseAvailability = (text) => {
+  if (!text || text.toLowerCase().includes('sin respuesta')) return [];
+  const slots = [];
+  const lower = text.toLowerCase();
+
+  // Heuristic 1: "any day at X" or "cualquier dia"
+  if (lower.includes('cualquier dia') || lower.includes('cualquier día')) {
+    const ranges = extractTimeRanges(lower);
+    for (let day = 0; day < 20; day++) {
+      const d = new Date(BASE_DATE);
+      d.setDate(d.getDate() + day);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      ranges.forEach(([start, end]) => {
+        slots.push({ date: ymd(d), start, end });
+      });
+    }
+    return slots;
+  }
+
+  // Heuristic 2: day-specific entries like "Lun27 3-6pm" or "Mar28 9-11am"
+  const dayPatterns = lower.match(/(lun|mar|mie|mié|jue|vie|sab|sáb|dom)\s*(\d{1,2})?[\s/]*(\d{1,2}\s*(?:am|pm|:\d{2})[^,;]*)/gi) || [];
+  dayPatterns.forEach(p => {
+    const dm = p.match(/(lun|mar|mie|mié|jue|vie|sab|sáb|dom)\s*(\d{1,2})?/i);
+    if (!dm) return;
+    const dayName = dm[1].toLowerCase().replace('mié','mie').replace('sáb','sab');
+    const dayNum = dm[2] ? parseInt(dm[2]) : null;
+    const dayMap = { lun: 1, mar: 2, mie: 3, jue: 4, vie: 5, sab: 6, dom: 0 };
+    const targetDow = dayMap[dayName];
+    const ranges = extractTimeRanges(p);
+    if (ranges.length === 0) return;
+    // find dates matching
+    for (let day = 0; day < 28; day++) {
+      const d = new Date(BASE_DATE);
+      d.setDate(d.getDate() + day);
+      if (d.getDay() !== targetDow) continue;
+      if (dayNum !== null && d.getDate() !== dayNum) continue;
+      ranges.forEach(([start, end]) => slots.push({ date: ymd(d), start, end }));
+      if (dayNum !== null) break;
+    }
+  });
+
+  // Heuristic 3: "Mar-Vie 8-9am" => Tue to Fri
+  const rangePattern = lower.match(/(lun|mar|mie|mié|jue|vie)\s*-\s*(lun|mar|mie|mié|jue|vie)\s+([\d:apm\s-]+)/i);
+  if (rangePattern && slots.length === 0) {
+    const dayMap = { lun: 1, mar: 2, mie: 3, mié: 3, jue: 4, vie: 5 };
+    const startD = dayMap[rangePattern[1].toLowerCase()];
+    const endD = dayMap[rangePattern[2].toLowerCase()];
+    const ranges = extractTimeRanges(rangePattern[3]);
+    for (let day = 0; day < 20; day++) {
+      const d = new Date(BASE_DATE);
+      d.setDate(d.getDate() + day);
+      if (d.getDay() < startD || d.getDay() > endD) continue;
+      ranges.forEach(([start, end]) => slots.push({ date: ymd(d), start, end }));
+    }
+  }
+
+  // Heuristic 4: time-only like "9:30am-2:30pm" => weekdays
+  if (slots.length === 0) {
+    const ranges = extractTimeRanges(lower);
+    if (ranges.length > 0) {
+      for (let day = 0; day < 14; day++) {
+        const d = new Date(BASE_DATE);
+        d.setDate(d.getDate() + day);
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
+        ranges.forEach(([start, end]) => slots.push({ date: ymd(d), start, end }));
+      }
+    }
+  }
+
+  return dedupeSlots(slots);
+};
+
+const extractTimeRanges = (text) => {
+  const ranges = [];
+  // patterns like "11am-2pm", "9:30am-2:30pm", "3-6pm", "1-2pm o 5-6pm"
+  const re = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*[-–]\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    let h1 = parseInt(m[1]);
+    const min1 = m[2] ? parseInt(m[2]) : 0;
+    let p1 = m[3]?.toLowerCase();
+    let h2 = parseInt(m[4]);
+    const min2 = m[5] ? parseInt(m[5]) : 0;
+    const p2 = m[6].toLowerCase();
+    if (!p1) p1 = p2; // "3-6pm" both pm
+    if (p1 === 'pm' && h1 < 12) h1 += 12;
+    if (p2 === 'pm' && h2 < 12) h2 += 12;
+    if (p1 === 'am' && h1 === 12) h1 = 0;
+    if (p2 === 'am' && h2 === 12) h2 = 0;
+    ranges.push([h1 * 60 + min1, h2 * 60 + min2]);
+  }
+  return ranges;
+};
+
+const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fromYmd = (s) => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const dedupeSlots = (slots) => {
+  const seen = new Set();
+  return slots.filter(s => {
+    const k = `${s.date}|${s.start}|${s.end}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+};
+
+const minutesToTime = (m) => {
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  const period = h >= 12 ? 'pm' : 'am';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(mm).padStart(2,'0')} ${period}`;
+};
+
+// Build expert availability map
+const buildAvailabilityMap = () => {
+  const map = {};
+  Object.entries(RAW_DATA.experts).forEach(([key, expert]) => {
+    map[key] = {
+      ...expert,
+      slots: parseAvailability(expert.disponibilidad),
+    };
+  });
+  return map;
+};
+
+// === Junta Directiva: per startup, list expert keys (Mentoría + 3 Consultorías + Plan Expansión) ===
+const getStartupExperts = (startup) => {
+  const seen = new Set();
+  const experts = [];
+  startup.services.forEach(svc => {
+    if (svc.experto) {
+      const k = expertKey(svc.experto);
+      if (!seen.has(k)) {
+        seen.add(k);
+        experts.push({
+          key: k,
+          name: svc.experto,
+          servicios: [svc.servicio + (svc.tema ? ' — ' + svc.tema : '')],
+        });
+      } else {
+        const ex = experts.find(e => e.key === k);
+        if (ex) ex.servicios.push(svc.servicio + (svc.tema ? ' — ' + svc.tema : ''));
+      }
+    }
+  });
+  return experts;
+};
+
+// === FIND BEST SLOTS (intersection of all experts' availability) ===
+const findCommonSlots = (expertKeys, availabilityMap, durationMin = 60) => {
+  // For each date, find time windows where all (or most) experts are available
+  const dateSlots = {}; // date -> array of {expertKey, start, end}
+  expertKeys.forEach(k => {
+    const exp = availabilityMap[k];
+    if (!exp) return;
+    exp.slots.forEach(s => {
+      if (!dateSlots[s.date]) dateSlots[s.date] = [];
+      dateSlots[s.date].push({ expertKey: k, start: s.start, end: s.end });
+    });
+  });
+
+  const candidates = [];
+  Object.entries(dateSlots).forEach(([date, slotsForDate]) => {
+    // For each 30-minute increment, count how many experts are available
+    for (let t = 6 * 60; t < 20 * 60; t += 30) {
+      const expEnd = t + durationMin;
+      const availableExperts = slotsForDate.filter(s => s.start <= t && s.end >= expEnd).map(s => s.expertKey);
+      const uniqAvail = [...new Set(availableExperts)];
+      if (uniqAvail.length >= 2) {
+        candidates.push({
+          date, start: t, end: expEnd,
+          availableExperts: uniqAvail,
+          missingExperts: expertKeys.filter(k => !uniqAvail.includes(k)),
+          score: uniqAvail.length / expertKeys.length,
+        });
+      }
+    }
+  });
+
+  // Sort: highest coverage, then earliest
+  candidates.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.start - b.start;
+  });
+
+  // Dedupe overlapping slots on same date
+  const out = [];
+  for (const c of candidates) {
+    if (out.some(o => o.date === c.date && Math.abs(o.start - c.start) < 60 && o.score >= c.score)) continue;
+    out.push(c);
+    if (out.length >= 12) break;
+  }
+  return out;
+};
+
+// === SUGGEST: For a specific expert, find slots where MOST OTHER experts are available
+// but this expert is NOT — these are the slots Sebas could ask the expert about
+const suggestExpertSlots = (targetExpert, allExpertKeys, availabilityMap, durationMin = 60) => {
+  const others = allExpertKeys.filter(k => k !== targetExpert);
+  if (others.length === 0) return [];
+
+  // For each date, find time windows where most OTHERS are available
+  const dateSlots = {};
+  others.forEach(k => {
+    const exp = availabilityMap[k];
+    if (!exp) return;
+    exp.slots.forEach(s => {
+      if (!dateSlots[s.date]) dateSlots[s.date] = [];
+      dateSlots[s.date].push({ expertKey: k, start: s.start, end: s.end });
+    });
+  });
+
+  const targetExp = availabilityMap[targetExpert];
+  const targetSlotsByDate = {};
+  if (targetExp) {
+    targetExp.slots.forEach(s => {
+      if (!targetSlotsByDate[s.date]) targetSlotsByDate[s.date] = [];
+      targetSlotsByDate[s.date].push(s);
+    });
+  }
+
+  const suggestions = [];
+  Object.entries(dateSlots).forEach(([date, slotsForDate]) => {
+    for (let t = 6 * 60; t < 20 * 60; t += 30) {
+      const expEnd = t + durationMin;
+      const availableOthers = [...new Set(slotsForDate.filter(s => s.start <= t && s.end >= expEnd).map(s => s.expertKey))];
+      // Only suggest if most others are available (>= half)
+      if (availableOthers.length < Math.max(1, Math.ceil(others.length / 2))) continue;
+      // Only suggest if target expert is NOT already covering this slot
+      const targetCovers = (targetSlotsByDate[date] || []).some(s => s.start <= t && s.end >= expEnd);
+      if (targetCovers) continue;
+      suggestions.push({
+        date, start: t, end: expEnd,
+        othersAvailable: availableOthers.length,
+        totalOthers: others.length,
+        coverage: availableOthers.length / others.length,
+      });
+    }
+  });
+
+  // Sort by coverage desc, then earliest
+  suggestions.sort((a, b) => {
+    if (b.coverage !== a.coverage) return b.coverage - a.coverage;
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return a.start - b.start;
+  });
+
+  // Dedupe close slots
+  const out = [];
+  for (const c of suggestions) {
+    if (out.some(o => o.date === c.date && Math.abs(o.start - c.start) < 60)) continue;
+    out.push(c);
+    if (out.length >= 4) break;
+  }
+  return out;
+};
+
+// === STORAGE ===
+const useStorage = (key, defaultValue) => {
+  const [value, setValue] = useState(defaultValue);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await window.storage.get(key);
+        if (result) setValue(JSON.parse(result.value));
+      } catch (e) { /* not found */ }
+      setLoaded(true);
+    })();
+  }, [key]);
+  const update = async (newVal) => {
+    setValue(newVal);
+    try { await window.storage.set(key, JSON.stringify(newVal)); } catch (e) { console.error(e); }
+  };
+  return [value, update, loaded];
+};
+
+// === COMPONENTS ===
+
+const Sidebar = ({ view, setView, juntasCount, onPublicView }) => (
+  <aside className="w-60 bg-[#0a0a0a] border-r border-[#242424] fixed inset-y-0 left-0 p-3 flex flex-col z-50">
+    <div className="flex items-center gap-2.5 px-2.5 py-2 mb-5">
+      <div className="w-8 h-8 bg-[#f5c542] rounded-lg grid place-items-center font-bold text-black text-sm">A+</div>
+      <div className="text-[14px] font-semibold leading-tight">
+        ALDEA+
+        <div className="text-[11px] text-[#555] font-normal">Centro de control</div>
+      </div>
+    </div>
+
+    <div className="text-[10px] uppercase text-[#555] tracking-[0.1em] font-semibold px-3 pb-1.5 pt-3">Líneas de negocio</div>
+
+    {[
+      { icon: Users, label: 'Conectar' },
+      { icon: Building2, label: 'Aprender' },
+      { icon: Sparkles, label: 'Innovar' },
+      { icon: Home, label: 'Incubar' },
+    ].map(({ icon: Icon, label }) => (
+      <div key={label} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] text-[#888] hover:bg-[#141414] hover:text-white cursor-pointer">
+        <Icon size={16} />{label}<ChevronRight size={14} className="ml-auto opacity-50" />
+      </div>
+    ))}
+
+    <div className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] bg-[#1a1a1a] text-[#f5c542] cursor-pointer">
+      <Calendar size={16} />Proyectos<ChevronDown size={14} className="ml-auto" />
+    </div>
+
+    <div className="ml-5 border-l border-[#242424] pl-2 mt-1">
+      <div className={`px-2.5 py-2 text-[13px] rounded-lg cursor-pointer ${view === 'dashboard' ? 'border border-[#f5c542] text-[#f5c542]' : 'text-[#888] hover:text-white'}`}
+           onClick={() => setView('dashboard')}>Panel Aldea</div>
+      <div className={`px-2.5 py-2 text-[13px] rounded-lg cursor-pointer ${view === 'juntas' ? 'border border-[#f5c542] text-[#f5c542]' : 'text-[#888] hover:text-white'}`}
+           onClick={() => setView('juntas')}>
+        Mini Juntas <span className="ml-1.5 bg-[#f5c542]/15 text-[#f5c542] text-[10px] font-bold px-1.5 py-0.5 rounded">{juntasCount}</span>
+      </div>
+      <div className="px-2.5 py-2 text-[13px] text-[#888] hover:text-white cursor-pointer">Startups</div>
+      <div className="px-2.5 py-2 text-[13px] text-[#888] hover:text-white cursor-pointer">Expertos</div>
+      <div className="px-2.5 py-2 text-[13px] text-[#888] hover:text-white cursor-pointer">Asignaciones</div>
+    </div>
+
+    <div className="mt-auto pt-4 border-t border-[#242424] flex items-center gap-2.5 px-2">
+      <div className="w-8 h-8 rounded-full bg-[#141414] grid place-items-center font-semibold text-[12px] text-[#f5c542]">SV</div>
+      <div className="text-[12px] leading-tight">
+        <b>Sebastián Velez Villa</b>
+        <div className="text-[#555] text-[11px]">sebastianvelezvilla@gmail.com</div>
+      </div>
+    </div>
+  </aside>
+);
+
+const TopBar = ({ crumbs, onPublicView }) => (
+  <div className="flex items-center justify-between mb-7">
+    <div className="flex items-center gap-2 text-[13px] text-[#555]">
+      {crumbs.map((c, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <ChevronRight size={12} />}
+          <span className={i === crumbs.length - 1 ? 'text-white font-medium' : 'text-[#888]'}>{c}</span>
+        </React.Fragment>
+      ))}
+    </div>
+    <div className="flex items-center gap-3">
+      <button onClick={onPublicView} className="text-[12px] text-[#888] hover:text-[#f5c542] flex items-center gap-1.5">
+        <ExternalLink size={13} /> Vista experto (preview)
+      </button>
+      <div className="bg-[#141414] border border-[#242424] rounded-lg px-3 py-1.5 flex items-center gap-2 w-60 text-[#555] text-[13px]">
+        <Search size={14} />
+        <span>Buscar...</span>
+        <kbd className="ml-auto bg-[#0f0f0f] px-1.5 py-0.5 rounded text-[10px] border border-[#242424] font-mono">⌘K</kbd>
+      </div>
+    </div>
+  </div>
+);
+
+const StatCard = ({ icon: Icon, color, value, label, sub }) => {
+  const colors = {
+    yellow: ['bg-[#f5c542]/15', 'text-[#f5c542]'],
+    green: ['bg-[#4ecb71]/15', 'text-[#4ecb71]'],
+    blue: ['bg-[#5b9fd6]/15', 'text-[#5b9fd6]'],
+    purple: ['bg-[#a47ed1]/15', 'text-[#a47ed1]'],
+  }[color];
+  return (
+    <div className="bg-[#141414] border border-[#242424] rounded-xl p-5 hover:border-[#353535] transition-colors">
+      <div className={`w-9 h-9 rounded-lg grid place-items-center mb-3.5 ${colors[0]} ${colors[1]}`}>
+        <Icon size={17} />
+      </div>
+      <div className="text-[28px] font-bold tracking-tight leading-none mb-1">{value}</div>
+      <div className="text-[13px] text-[#888]">{label}</div>
+      {sub && <div className="text-[11px] text-[#555] mt-0.5 font-mono">{sub}</div>}
+    </div>
+  );
+};
+
+const StartupCard = ({ startup, junta, onClick, availabilityMap }) => {
+  const experts = getStartupExperts(startup);
+  const respondedCount = experts.filter(e => availabilityMap[e.key]?.estado === 'Respondio').length;
+  const status = junta?.status || 'pending';
+  const statusInfo = {
+    pending: { label: 'Pendiente', cls: 'bg-[#e0943a]/15 text-[#e0943a]', icon: Clock },
+    scheduled: { label: 'Agendada', cls: 'bg-[#4ecb71]/15 text-[#4ecb71]', icon: Calendar },
+    done: { label: 'Realizada', cls: 'bg-[#888]/15 text-[#888]', icon: Check },
+  }[status];
+  const StatusIcon = statusInfo.icon;
+
+  // Format scheduled date if present
+  let scheduledLabel = null;
+  if (junta?.scheduledAt) {
+    const d = fromYmd(junta.scheduledAt.date);
+    const dayShort = DAYS_ES[d.getDay() === 0 ? 6 : d.getDay() - 1];
+    scheduledLabel = `${dayShort} ${d.getDate()} ${MONTHS_ES[d.getMonth()]} · ${junta.scheduledAt.time}`;
+  }
+
+  return (
+    <div onClick={onClick} className="bg-[#141414] border border-[#242424] rounded-xl p-5 cursor-pointer hover:border-[#353535] hover:bg-[#1a1a1a] transition-all relative overflow-hidden group">
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#f5c542] opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="flex justify-between items-start mb-3">
+        <span className="font-mono text-[11px] text-[#f5c542] bg-[#f5c542]/15 px-2 py-0.5 rounded font-bold">{STARTUP_ID(startup)}</span>
+        <div className="flex items-center gap-1.5">
+          {(() => {
+            const hasProposal = Object.values(RAW_DATA.expert_proposals || {}).some(byStartup => byStartup[startup.name]);
+            return hasProposal ? (
+              <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-[#a47ed1]/15 text-[#a47ed1] flex items-center gap-1" title="Experto envió propuesta horaria"><Bell size={9}/> Propuesta</span>
+            ) : null;
+          })()}
+          <span className={`text-[10px] px-2 py-0.5 rounded font-semibold flex items-center gap-1 ${statusInfo.cls}`}>
+            <StatusIcon size={10}/> {statusInfo.label}
+          </span>
+        </div>
+      </div>
+      <h3 className="text-[16px] font-semibold mb-1 leading-tight">{startup.name}</h3>
+      <div className="text-[12px] text-[#888] mb-3.5">{startup.emprendedor || '—'}</div>
+
+      {scheduledLabel && (
+        <div className={`text-[11.5px] font-medium mb-3 px-2.5 py-1.5 rounded-md flex items-center gap-1.5 ${status === 'done' ? 'bg-[#888]/10 text-[#888]' : 'bg-[#4ecb71]/10 text-[#4ecb71]'}`}>
+          <Calendar size={11}/> {scheduledLabel}
+        </div>
+      )}
+
+      <div className="space-y-1.5 mb-4">
+        {experts.slice(0, 4).map(e => {
+          const exp = availabilityMap[e.key];
+          const responded = exp?.estado === 'Respondio';
+          return (
+            <div key={e.key} className="flex items-center gap-2 text-[12px]">
+              <div className="w-6 h-6 rounded-full grid place-items-center text-[10px] font-bold flex-shrink-0" style={{ backgroundColor: colorFromName(e.name) + '30', color: colorFromName(e.name) }}>
+                {initials(e.name)}
+              </div>
+              <span className="flex-1 truncate text-[#ccc]">{e.name}</span>
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${responded ? 'bg-[#4ecb71]' : 'bg-[#e0943a]'}`}></div>
+            </div>
+          );
+        })}
+        {experts.length > 4 && <div className="text-[11px] text-[#555] pl-8">+{experts.length - 4} más</div>}
+      </div>
+
+      <div className="flex items-center justify-between pt-3 border-t border-[#242424]">
+        <span className="text-[11px] text-[#555]">
+          <span className={respondedCount === experts.length ? 'text-[#4ecb71]' : 'text-[#e0943a]'}>{respondedCount}/{experts.length}</span> respondieron
+        </span>
+        <ArrowRight size={14} className="text-[#555] group-hover:text-[#f5c542] group-hover:translate-x-1 transition-all" />
+      </div>
+    </div>
+  );
+};
+
+const SlotCandidate = ({ slot, expertKeys, availabilityMap, expanded, onToggle }) => {
+  const date = fromYmd(slot.date);
+  const dayName = FULL_DAYS_ES[date.getDay() === 0 ? 6 : date.getDay() - 1];
+  const isFull = slot.score === 1;
+  const coverage = Math.round(slot.score * 100);
+
+  return (
+    <div className={`border rounded-xl overflow-hidden transition-all ${isFull ? 'border-[#4ecb71]/40 bg-[#4ecb71]/5' : 'border-[#242424] bg-[#0f0f0f] hover:border-[#353535]'}`}>
+      <div onClick={onToggle} className="p-4 flex items-center gap-4 cursor-pointer">
+        <div className="text-center min-w-[60px]">
+          <div className="text-[10px] uppercase text-[#888] tracking-wider">{dayName.slice(0,3)}</div>
+          <div className="text-[26px] font-bold leading-none my-0.5">{date.getDate()}</div>
+          <div className="text-[10px] text-[#888]">{MONTHS_ES[date.getMonth()]}</div>
+        </div>
+        <div className="w-px h-10 bg-[#242424]"></div>
+        <div className="flex-1">
+          <div className="text-[15px] font-semibold mb-1">{minutesToTime(slot.start)} — {minutesToTime(slot.end)}</div>
+          <div className="flex items-center gap-3 text-[12px]">
+            <span className={isFull ? 'text-[#4ecb71]' : 'text-[#e0943a]'}>
+              {slot.availableExperts.length} de {expertKeys.length} disponibles · {coverage}%
+            </span>
+            <div className="flex -space-x-1.5">
+              {slot.availableExperts.slice(0, 5).map(k => {
+                const e = availabilityMap[k];
+                return e ? (
+                  <div key={k} className="w-6 h-6 rounded-full grid place-items-center text-[9px] font-bold border-2 border-[#0a0a0a]" style={{ backgroundColor: colorFromName(e.name), color: '#000' }}>
+                    {initials(e.name)}
+                  </div>
+                ) : null;
+              })}
+            </div>
+          </div>
+        </div>
+        {isFull && (
+          <span className="bg-[#4ecb71]/15 text-[#4ecb71] font-semibold text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1">
+            <Check size={12}/> Match completo
+          </span>
+        )}
+        <ChevronDown size={18} className={`text-[#888] transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </div>
+      {expanded && (
+        <div className="border-t border-[#242424] bg-[#0a0a0a] p-4">
+          <div className="grid grid-cols-2 gap-2">
+            {expertKeys.map(k => {
+              const e = availabilityMap[k];
+              const isAvail = slot.availableExperts.includes(k);
+              return (
+                <div key={k} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] ${isAvail ? 'bg-[#4ecb71]/10' : 'bg-[#e05555]/5'}`}>
+                  {isAvail ? <Check size={13} className="text-[#4ecb71]" /> : <X size={13} className="text-[#e05555]" />}
+                  <span className={isAvail ? 'text-white' : 'text-[#888]'}>{e?.name || k}</span>
+                  {!isAvail && e?.estado !== 'Respondio' && (
+                    <span className="ml-auto text-[10px] text-[#e0943a]">sin respuesta</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const StartupDetailView = ({ startup, junta, setJunta, availabilityMap, onBack, onOpenExpertView }) => {
+  const experts = getStartupExperts(startup);
+  const expertKeys = experts.map(e => e.key);
+  const [expandedSlot, setExpandedSlot] = useState(null);
+  const [duration, setDuration] = useState(60);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState(junta?.scheduledAt?.date || '');
+  const [scheduleTime, setScheduleTime] = useState(junta?.scheduledAt?.time || '');
+  const [scheduleNotes, setScheduleNotes] = useState(junta?.notes || '');
+
+  const candidates = useMemo(() => findCommonSlots(expertKeys, availabilityMap, duration), [expertKeys, availabilityMap, duration]);
+  const suggestionsByExpert = useMemo(() => {
+    const m = {};
+    expertKeys.forEach(k => {
+      m[k] = suggestExpertSlots(k, expertKeys, availabilityMap, duration);
+    });
+    return m;
+  }, [expertKeys, availabilityMap, duration]);
+  const respondedCount = experts.filter(e => availabilityMap[e.key]?.estado === 'Respondio').length;
+
+  const status = junta?.status || 'pending';
+
+  const setStatusTo = (newStatus) => {
+    if (newStatus === 'pending') {
+      setJunta({ status: 'pending' });
+      setShowScheduleEditor(false);
+    } else if (newStatus === 'scheduled') {
+      setShowScheduleEditor(true);
+    } else if (newStatus === 'done') {
+      if (junta?.scheduledAt) {
+        setJunta({ ...junta, status: 'done', completedAt: Date.now() });
+      } else {
+        setShowScheduleEditor(true);
+      }
+    }
+  };
+
+  const saveSchedule = () => {
+    if (!scheduleDate || !scheduleTime) return;
+    setJunta({
+      ...junta,
+      status: 'scheduled',
+      scheduledAt: { date: scheduleDate, time: scheduleTime },
+      notes: scheduleNotes,
+      updatedAt: Date.now(),
+    });
+    setShowScheduleEditor(false);
+  };
+
+  const formatScheduledDate = () => {
+    if (!junta?.scheduledAt) return null;
+    const d = fromYmd(junta.scheduledAt.date);
+    return `${FULL_DAYS_ES[d.getDay() === 0 ? 6 : d.getDay() - 1]} ${d.getDate()} de ${MONTHS_ES[d.getMonth()]} · ${junta.scheduledAt.time}`;
+  };
+
+  return (
+    <div>
+      <button onClick={onBack} className="text-[#888] hover:text-white text-[13px] flex items-center gap-1.5 mb-5">
+        <ChevronLeft size={15} /> Volver a juntas
+      </button>
+
+      <div className="flex items-start gap-5 mb-6">
+        <div className="w-14 h-14 bg-[#f5c542]/15 rounded-xl grid place-items-center flex-shrink-0">
+          <Building2 size={26} className="text-[#f5c542]" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="font-mono text-[11px] text-[#f5c542] bg-[#f5c542]/15 px-2 py-0.5 rounded font-bold">{STARTUP_ID(startup)}</span>
+            <span className="text-[11px] text-[#888]">Cohorte {startup.cohorte}</span>
+          </div>
+          <h1 className="text-[28px] font-bold tracking-tight leading-tight">{startup.name}</h1>
+          <div className="flex items-center gap-4 mt-2 text-[13px] text-[#888]">
+            {startup.emprendedor && <span className="flex items-center gap-1.5"><UserCheck size={14}/> {startup.emprendedor}</span>}
+            {startup.correo && <span className="flex items-center gap-1.5"><Mail size={14}/> {startup.correo}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Status selector */}
+      <div className="bg-[#141414] border border-[#242424] rounded-xl p-5 mb-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-[13px] font-semibold text-[#888] uppercase tracking-wider">Estado de la junta</div>
+          {junta?.scheduledAt && status !== 'pending' && (
+            <button onClick={() => setShowScheduleEditor(true)} className="text-[11px] text-[#888] hover:text-[#f5c542] flex items-center gap-1">
+              <Edit2 size={11}/> Editar fecha
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {[
+            { k: 'pending', label: 'Pendiente', icon: Clock, cls: 'border-[#e0943a] bg-[#e0943a]/15 text-[#e0943a]', inactive: 'border-[#242424] text-[#666] hover:border-[#e0943a]/40 hover:text-[#e0943a]' },
+            { k: 'scheduled', label: 'Agendada', icon: Calendar, cls: 'border-[#4ecb71] bg-[#4ecb71]/15 text-[#4ecb71]', inactive: 'border-[#242424] text-[#666] hover:border-[#4ecb71]/40 hover:text-[#4ecb71]' },
+            { k: 'done', label: 'Realizada', icon: Check, cls: 'border-[#888] bg-[#888]/15 text-white', inactive: 'border-[#242424] text-[#666] hover:border-[#888] hover:text-white' },
+          ].map(({ k, label, icon: SIcon, cls, inactive }) => (
+            <button key={k} onClick={() => setStatusTo(k)} className={`px-3 py-2.5 rounded-lg border text-[12.5px] font-medium flex items-center justify-center gap-1.5 transition-all ${status === k ? cls : inactive}`}>
+              <SIcon size={13}/> {label}
+            </button>
+          ))}
+        </div>
+
+        {junta?.scheduledAt && !showScheduleEditor && (
+          <div className="bg-[#0f0f0f] rounded-lg p-3.5 flex items-start gap-3">
+            <div className={`w-8 h-8 rounded-lg grid place-items-center flex-shrink-0 ${status === 'done' ? 'bg-[#888]/20 text-[#888]' : 'bg-[#4ecb71]/20 text-[#4ecb71]'}`}>
+              <Calendar size={15}/>
+            </div>
+            <div className="flex-1">
+              <div className="text-[14px] font-semibold">{formatScheduledDate()}</div>
+              {junta.notes && <div className="text-[12px] text-[#888] mt-0.5">{junta.notes}</div>}
+            </div>
+          </div>
+        )}
+
+        {showScheduleEditor && (
+          <div className="bg-[#0f0f0f] rounded-lg p-4 space-y-3">
+            <div className="text-[12px] text-[#888] mb-1">Registra cuándo se hará (o se hizo) la junta</div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] text-[#888] block mb-1">Fecha</label>
+                <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)} className="w-full bg-[#141414] border border-[#242424] rounded-md px-3 py-2 text-[13px] focus:border-[#f5c542] focus:outline-none"/>
+              </div>
+              <div>
+                <label className="text-[11px] text-[#888] block mb-1">Hora</label>
+                <input type="time" value={scheduleTime} onChange={e => setScheduleTime(e.target.value)} className="w-full bg-[#141414] border border-[#242424] rounded-md px-3 py-2 text-[13px] focus:border-[#f5c542] focus:outline-none"/>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] text-[#888] block mb-1">Notas (opcional)</label>
+              <input type="text" value={scheduleNotes} onChange={e => setScheduleNotes(e.target.value)} placeholder="Ej. link Meet, asistentes confirmados..." className="w-full bg-[#141414] border border-[#242424] rounded-md px-3 py-2 text-[13px] focus:border-[#f5c542] focus:outline-none"/>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => setShowScheduleEditor(false)} className="flex-1 bg-[#141414] border border-[#242424] rounded-md py-2 text-[12px] hover:bg-[#1a1a1a]">Cancelar</button>
+              <button onClick={saveSchedule} disabled={!scheduleDate || !scheduleTime} className="flex-1 bg-[#f5c542] text-black rounded-md py-2 text-[12px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed">Guardar</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Expert proposals banner */}
+      {(() => {
+        const proposals = [];
+        Object.entries(RAW_DATA.expert_proposals || {}).forEach(([expKey, byStartup]) => {
+          if (byStartup[startup.name]) {
+            const exp = availabilityMap[expKey];
+            proposals.push({ expKey, name: exp?.name || expKey, ...byStartup[startup.name] });
+          }
+        });
+        if (proposals.length === 0) return null;
+        return (
+          <div className="bg-gradient-to-r from-[#a47ed1]/15 to-transparent border border-[#a47ed1]/30 rounded-xl p-5 mb-5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-[#a47ed1]/20 grid place-items-center flex-shrink-0">
+                <Bell size={18} className="text-[#a47ed1]"/>
+              </div>
+              <div className="flex-1">
+                <div className="text-[13px] text-[#a47ed1] font-semibold mb-2">Propuesta horaria recibida del experto</div>
+                {proposals.map(p => (
+                  <div key={p.expKey} className="text-[14px] mb-1">
+                    <b>{p.name}</b> propone: <span className="font-mono bg-[#a47ed1]/15 text-[#a47ed1] px-2 py-0.5 rounded text-[12px] ml-1">Jueves 30 abr · {p.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Experts panel with per-expert suggestions */}
+      <div className="bg-[#141414] border border-[#242424] rounded-xl p-6 mb-5">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-[15px] font-semibold mb-0.5">Mini Junta Directiva · {experts.length} expertos</h3>
+            <p className="text-[12px] text-[#888]">
+              <span className={respondedCount === experts.length ? 'text-[#4ecb71]' : 'text-[#e0943a]'}>{respondedCount} de {experts.length}</span> han enviado disponibilidad
+            </p>
+          </div>
+          <button onClick={onOpenExpertView} className="text-[12px] text-[#f5c542] flex items-center gap-1.5 hover:underline">
+            <Send size={12}/> Ver vista pública del experto
+          </button>
+        </div>
+        <div className="space-y-2.5">
+          {experts.map(e => {
+            const exp = availabilityMap[e.key];
+            const responded = exp?.estado === 'Respondio';
+            const suggestions = suggestionsByExpert[e.key] || [];
+
+            return (
+              <div key={e.key} className="bg-[#0f0f0f] border border-[#242424] rounded-lg p-3.5 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-full grid place-items-center text-[12px] font-bold flex-shrink-0" style={{ backgroundColor: colorFromName(e.name) + '30', color: colorFromName(e.name) }}>
+                    {initials(e.name)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-[13px] truncate">{e.name}</span>
+                      <div className={`w-1.5 h-1.5 rounded-full ${responded ? 'bg-[#4ecb71]' : 'bg-[#e0943a]'}`}></div>
+                    </div>
+                    <div className="text-[10.5px] text-[#888] mb-1">{exp?.role || '—'} · {e.servicios.length} servicio{e.servicios.length > 1 ? 's' : ''}</div>
+                    {exp?.email && (
+                      <a href={`mailto:${exp.email}`} className="text-[10.5px] text-[#666] truncate hover:text-[#f5c542] block">{exp.email}</a>
+                    )}
+                    {responded && exp?.disponibilidad && (
+                      <div className="text-[10.5px] text-[#888] mt-1.5 italic line-clamp-2">"{exp.disponibilidad}"</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Per-expert suggestions */}
+                <div className="md:max-w-[320px] md:border-l md:border-[#242424] md:pl-3">
+                  {!responded ? (
+                    <div className="text-[11px]">
+                      <div className="text-[#e0943a] font-semibold mb-1 flex items-center gap-1"><AlertCircle size={11}/> Sin disponibilidad cargada</div>
+                      <div className="text-[#666] leading-snug">Cuando responda, aquí verás sugerencias.</div>
+                    </div>
+                  ) : suggestions.length === 0 ? (
+                    <div className="text-[11px]">
+                      <div className="text-[#4ecb71] font-semibold mb-1 flex items-center gap-1"><Check size={11}/> Buenos cruces</div>
+                      <div className="text-[#666] leading-snug">Su disponibilidad cubre los slots comunes.</div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-[10.5px] font-semibold text-[#f5c542] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <Sparkles size={10}/> Pregúntale si puede:
+                      </div>
+                      <div className="space-y-1">
+                        {suggestions.slice(0, 3).map((s, i) => {
+                          const d = fromYmd(s.date);
+                          const day = DAYS_ES[d.getDay() === 0 ? 6 : d.getDay() - 1];
+                          return (
+                            <div key={i} className="bg-[#141414] rounded px-2 py-1.5 text-[11px] flex items-center justify-between gap-2 hover:bg-[#1a1a1a]">
+                              <span>
+                                <b>{day} {d.getDate()} {MONTHS_ES[d.getMonth()]}</b> · {minutesToTime(s.start)}
+                              </span>
+                              <span className="text-[#4ecb71] font-mono text-[10px]">+{s.othersAvailable}/{s.totalOthers}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Slot recommendations - main intersection finder */}
+      <div className="bg-[#141414] border border-[#242424] rounded-xl p-6">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-[15px] font-semibold flex items-center gap-2">
+            <Sparkles size={15} className="text-[#f5c542]"/> Slots comunes — cruce de disponibilidades
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-[#888]">Duración:</span>
+            <select value={duration} onChange={e => setDuration(parseInt(e.target.value))} className="bg-[#0f0f0f] border border-[#242424] rounded-md px-2 py-1 text-[12px]">
+              <option value={30}>30 min</option>
+              <option value={45}>45 min</option>
+              <option value={60}>1 h</option>
+              <option value={90}>1.5 h</option>
+            </select>
+          </div>
+        </div>
+        <p className="text-[12px] text-[#888] mb-5">Mejores ventanas según las disponibilidades cargadas. Click en un slot para ver el detalle expert por experto.</p>
+
+        {candidates.length === 0 ? (
+          <div className="text-center py-12 text-[#888] text-[13px]">
+            <AlertCircle size={28} className="mx-auto mb-3 opacity-40"/>
+            No hay slots comunes con la disponibilidad actual.<br/>
+            <span className="text-[11px]">Solicita disponibilidad a los {experts.length - respondedCount} expertos pendientes o revisa las sugerencias arriba.</span>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {candidates.map((slot, i) => (
+              <SlotCandidate key={i} slot={slot} expertKeys={expertKeys} availabilityMap={availabilityMap}
+                expanded={expandedSlot === i} onToggle={() => setExpandedSlot(expandedSlot === i ? null : i)} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ExpertPublicView = ({ expertKey, availabilityMap, updateExpertAvailability, onBack }) => {
+  const expert = availabilityMap[expertKey];
+  const [editText, setEditText] = useState(expert?.disponibilidad || '');
+  const [savedToast, setSavedToast] = useState(false);
+
+  if (!expert) return null;
+
+  // Find which startups this expert is part of
+  const myStartups = RAW_DATA.startups.filter(s =>
+    s.services.some(svc => expertKey === normalize(svc.experto))
+  );
+
+  const save = () => {
+    updateExpertAvailability(expertKey, editText);
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2500);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-3xl mx-auto p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 bg-[#f5c542] rounded-lg grid place-items-center font-bold text-black">A+</div>
+            <div className="text-[14px] font-semibold">ALDEA<span className="text-[#f5c542]">+</span></div>
+          </div>
+          <button onClick={onBack} className="text-[12px] text-[#888] hover:text-white flex items-center gap-1.5">
+            <ChevronLeft size={13}/> Volver al admin (preview)
+          </button>
+        </div>
+
+        <div className="bg-[#141414] border border-[#242424] rounded-2xl p-8 mb-6">
+          <div className="flex items-start gap-5 mb-6">
+            <div className="w-16 h-16 rounded-full grid place-items-center text-[20px] font-bold flex-shrink-0" style={{ backgroundColor: colorFromName(expert.name) + '30', color: colorFromName(expert.name) }}>
+              {initials(expert.name)}
+            </div>
+            <div className="flex-1">
+              <div className="text-[11px] text-[#888] mb-1">Hola,</div>
+              <h1 className="text-[26px] font-bold tracking-tight leading-tight mb-1">{expert.name}</h1>
+              <div className="text-[13px] text-[#888]">{expert.role || 'Experto ALDEA+'} · {expert.email}</div>
+            </div>
+          </div>
+
+          <div className="bg-[#0f0f0f] rounded-xl p-5 mb-6">
+            <div className="text-[12px] text-[#f5c542] font-semibold uppercase tracking-wider mb-2">Mini Juntas Directivas asignadas</div>
+            <p className="text-[13px] text-[#ccc] leading-relaxed mb-3">
+              Estás invitado a participar en {myStartups.length} mini junta{myStartups.length > 1 ? 's' : ''} directiva{myStartups.length > 1 ? 's' : ''} junto con los demás expertos asignados a cada startup. <b>El emprendedor no estará presente</b> — el objetivo es alinearnos entre nosotros.
+            </p>
+            <div className="space-y-1.5">
+              {myStartups.map(s => (
+                <div key={s.name} className="flex items-center gap-2 text-[12px] bg-[#141414] px-3 py-2 rounded-lg">
+                  <span className="font-mono text-[10px] text-[#f5c542] bg-[#f5c542]/15 px-1.5 py-0.5 rounded font-bold">{STARTUP_ID(s)}</span>
+                  <span>{s.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[13px] font-semibold mb-1 block">Tu disponibilidad horaria</label>
+            <p className="text-[12px] text-[#888] mb-3">
+              Indica los días y horas en que puedes participar (próximas 4 semanas). Ejemplo: <span className="text-[#888] italic">"Lun27 3-6pm, Mar28 9-11am, Jue30 todo el día"</span>
+            </p>
+            <textarea
+              value={editText}
+              onChange={e => setEditText(e.target.value)}
+              placeholder="Ingresa tu disponibilidad..."
+              className="w-full bg-[#0f0f0f] border border-[#242424] rounded-lg p-4 text-[13px] min-h-[120px] focus:border-[#f5c542] focus:outline-none transition-colors"
+            />
+            <div className="flex items-center justify-between mt-3">
+              <div className="text-[11px] text-[#555]">
+                {expert.estado === 'Respondio' ? '✓ Disponibilidad cargada previamente · puedes modificarla' : 'Aún no has enviado disponibilidad'}
+              </div>
+              <button onClick={save} className="bg-[#f5c542] text-black font-semibold text-[13px] px-5 py-2 rounded-lg hover:brightness-110 flex items-center gap-1.5">
+                <Check size={14}/> Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-[#555] text-center">
+          Plataforma ALDEA+ · Powered by aldea.on.going@gmail.com
+        </div>
+
+        {savedToast && (
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-[#4ecb71] text-black font-semibold text-[13px] px-5 py-2.5 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+            <Check size={15}/> Disponibilidad actualizada
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// === MAIN APP ===
+function App() {
+  const [view, setView] = useState('juntas');
+  const [selectedStartupName, setSelectedStartupName] = useState(null);
+  const [expertViewKey, setExpertViewKey] = useState(null);
+  const [filter, setFilter] = useState('all'); // all, c1, c2, pending, scheduled
+  const [search, setSearch] = useState('');
+
+  const [juntas, setJuntas, juntasLoaded] = useStorage('aldea_juntas_v1', {});
+  const [expertOverrides, setExpertOverrides, overridesLoaded] = useStorage('aldea_expert_avail_v1', {});
+
+  const availabilityMap = useMemo(() => {
+    const base = buildAvailabilityMap();
+    Object.entries(expertOverrides).forEach(([k, v]) => {
+      if (base[k]) {
+        base[k] = {
+          ...base[k],
+          disponibilidad: v,
+          estado: v && v.trim() ? 'Respondio' : base[k].estado,
+          slots: parseAvailability(v),
+        };
+      }
+    });
+    return base;
+  }, [expertOverrides]);
+
+  const updateExpertAvailability = (key, text) => {
+    setExpertOverrides({ ...expertOverrides, [key]: text });
+  };
+
+  const setJuntaForStartup = (startupName, junta) => {
+    setJuntas({ ...juntas, [startupName]: junta });
+  };
+
+  const filteredStartups = useMemo(() => {
+    return RAW_DATA.startups.filter(s => {
+      if (filter === 'c1' && s.cohorte !== 'C1') return false;
+      if (filter === 'c2' && s.cohorte !== 'C2') return false;
+      const j = juntas[s.name];
+      const st = j?.status || 'pending';
+      if (filter === 'pending' && st !== 'pending') return false;
+      if (filter === 'scheduled' && st !== 'scheduled') return false;
+      if (filter === 'done' && st !== 'done') return false;
+      if (search && !s.name.toLowerCase().includes(search.toLowerCase()) && !s.emprendedor?.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [filter, search, juntas]);
+
+  const stats = useMemo(() => {
+    const total = RAW_DATA.startups.length;
+    const scheduled = Object.values(juntas).filter(j => j.status === 'scheduled').length;
+    const done = Object.values(juntas).filter(j => j.status === 'done').length;
+    const allExpertKeys = new Set();
+    RAW_DATA.startups.forEach(s => getStartupExperts(s).forEach(e => allExpertKeys.add(e.key)));
+    const respondedExperts = [...allExpertKeys].filter(k => availabilityMap[k]?.estado === 'Respondio').length;
+    return { total, scheduled, done, respondedExperts, totalExperts: allExpertKeys.size };
+  }, [juntas, availabilityMap]);
+
+  const juntasCount = stats.total;
+
+  if (!juntasLoaded || !overridesLoaded) {
+    return <div className="min-h-screen bg-[#0a0a0a] grid place-items-center text-[#888]">Cargando...</div>;
+  }
+
+  // Public expert view
+  if (expertViewKey) {
+    return <ExpertPublicView expertKey={expertViewKey} availabilityMap={availabilityMap} updateExpertAvailability={updateExpertAvailability} onBack={() => setExpertViewKey(null)} />;
+  }
+
+  const selectedStartup = selectedStartupName ? RAW_DATA.startups.find(s => s.name === selectedStartupName) : null;
+
+  // Admin views
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <Sidebar view={view} setView={(v) => { setView(v); setSelectedStartupName(null); }} juntasCount={juntasCount} />
+
+      <main className="ml-60 p-8 max-w-[calc(100vw-240px)]">
+        <TopBar
+          crumbs={selectedStartup ? ['Admin', 'ALDEA+', 'Mini Juntas', STARTUP_ID(selectedStartup)] : ['Admin', 'ALDEA+', 'Mini Juntas Directivas']}
+          onPublicView={() => {
+            const firstKey = Object.keys(availabilityMap)[0];
+            setExpertViewKey(firstKey);
+          }}
+        />
+
+        {!selectedStartup && (
+          <>
+            <div className="flex items-start gap-4 mb-7">
+              <div className="w-12 h-12 bg-[#f5c542]/15 rounded-xl grid place-items-center">
+                <Calendar size={24} className="text-[#f5c542]"/>
+              </div>
+              <div>
+                <h1 className="text-[28px] font-bold tracking-tight leading-tight">Mini Juntas Directivas</h1>
+                <p className="text-[13px] text-[#888] mt-0.5">Coordinación de sesiones de alineación entre expertos por startup · sin emprendedor</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3.5 mb-7">
+              <StatCard icon={Building2} color="yellow" value={stats.total} label="Startups C1+C2" sub="cohortes activas"/>
+              <StatCard icon={Users} color="blue" value={`${stats.respondedExperts}/${stats.totalExperts}`} label="Expertos con disponibilidad" sub={`${Math.round(stats.respondedExperts/stats.totalExperts*100)}% completado`}/>
+              <StatCard icon={Sparkles} color="purple" value={stats.scheduled} label="Juntas agendadas" sub="con fecha confirmada"/>
+              <StatCard icon={Check} color="green" value={stats.done} label="Juntas realizadas" sub={`de ${stats.total} totales`}/>
+            </div>
+
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#242424]">
+              <div className="flex gap-1 bg-[#141414] p-1 rounded-lg border border-[#242424]">
+                {[
+                  { k: 'all', label: 'Todas' },
+                  { k: 'c1', label: 'Cohorte 1' },
+                  { k: 'c2', label: 'Cohorte 2' },
+                  { k: 'pending', label: 'Pendientes' },
+                  { k: 'scheduled', label: 'Agendadas' },
+                  { k: 'done', label: 'Realizadas' },
+                ].map(({ k, label }) => (
+                  <button key={k} onClick={() => setFilter(k)} className={`px-3.5 py-1.5 text-[12.5px] font-medium rounded-md transition-all ${filter === k ? 'bg-[#f5c542] text-black' : 'text-[#888] hover:text-white'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex-1"></div>
+              <div className="bg-[#141414] border border-[#242424] rounded-lg px-3 py-1.5 flex items-center gap-2 w-64">
+                <Search size={13} className="text-[#555]"/>
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar startup..." className="bg-transparent outline-none text-[12.5px] flex-1"/>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 mb-12">
+              {filteredStartups.map(s => (
+                <StartupCard key={s.name} startup={s} junta={juntas[s.name]} availabilityMap={availabilityMap} onClick={() => setSelectedStartupName(s.name)} />
+              ))}
+            </div>
+
+            {filteredStartups.length === 0 && (
+              <div className="text-center py-16 text-[#888]">
+                <Building2 size={32} className="mx-auto mb-3 opacity-40"/>
+                No hay startups que coincidan con el filtro
+              </div>
+            )}
+          </>
+        )}
+
+        {selectedStartup && (
+          <StartupDetailView
+            startup={selectedStartup}
+            junta={juntas[selectedStartup.name] || { status: 'pending' }}
+            setJunta={(j) => setJuntaForStartup(selectedStartup.name, j)}
+            availabilityMap={availabilityMap}
+            onBack={() => setSelectedStartupName(null)}
+            onOpenExpertView={() => {
+              const experts = getStartupExperts(selectedStartup);
+              if (experts[0]) setExpertViewKey(experts[0].key);
+            }}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
